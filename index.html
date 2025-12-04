@@ -1,30 +1,122 @@
 <!DOCTYPE html>
 <html lang="cs">
-  <head>
-    <meta charset="UTF-8" />
-    <title>MonaLIGHT agent</title>
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>OpenAI Workflow UI</title>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            background: #f4f4f7;
+            padding: 40px;
+            display: flex;
+            justify-content: center;
+        }
 
-    <!-- Knihovna ChatKit – vezmi přesně adresu skriptu z dokumentace -->
-    <script
-      src="https://cdn.platform.openai.com/deployments/chatkit/chatkit.js"
-      async
-    ></script>
-  </head>
+        .container {
+            width: 600px;
+            background: #fff;
+            padding: 25px;
+            border-radius: 10px;
+            box-shadow: 0 2px 12px rgba(0,0,0,0.1);
+        }
 
-  <body>
-    <h1>MonaLIGHT – testovací chat</h1>
-    <div id="chat-container"></div>
+        textarea, input {
+            width: 100%;
+            padding: 12px;
+            margin-top: 10px;
+            border-radius: 6px;
+            border: 1px solid #ccc;
+            font-size: 14px;
+        }
+
+        button {
+            margin-top: 15px;
+            padding: 12px 20px;
+            background: #007bff;
+            color: white;
+            border: none;
+            border-radius: 6px;
+            cursor: pointer;
+            width: 100%;
+        }
+
+        button:hover { background: #0056b3; }
+
+        .response-box {
+            margin-top: 20px;
+            padding: 15px;
+            background: #f1f1f1;
+            border-radius: 8px;
+            white-space: pre-wrap;
+        }
+    </style>
+</head>
+
+<body>
+    <div class="container">
+        <h2>OpenAI Workflow – Web klient</h2>
+
+        <label>OpenAI API Key:</label>
+        <input id="apiKey" type="password" placeholder="sk-..." />
+
+        <label for="prompt">Zadej dotaz:</label>
+        <textarea id="prompt" rows="4" placeholder="Sem napiš prompt pro workflow..."></textarea>
+
+        <button id="sendBtn">Odeslat</button>
+
+        <h3>Odpověď:</h3>
+        <div id="response" class="response-box">–</div>
+    </div>
+
+    <!-- ChatKit SDK (browser version) -->
+    <script src="https://cdn.jsdelivr.net/npm/@openai/chatkit@latest/dist/chatkit.browser.js"></script>
 
     <script>
-      window.addEventListener("load", () => {
-        window.ChatKit.init({
-          element: document.getElementById("chat-container"),
-          workflowId: "wf_6930adcccc4481909aa0a28d45fc96f2024fd4887f52519a",
-          // version: "1", // pokud chceš fixovat verzi
-          publicKey: "domain_pk_69317abcb0c081968b52f88d8902a3e40aeee35a35ba0915",
-          locale: "cs"
-        });
-      });
+        document.getElementById("sendBtn").onclick = async function () {
+            const apiKey = document.getElementById("apiKey").value.trim();
+            const prompt = document.getElementById("prompt").value.trim();
+            const responseBox = document.getElementById("response");
+
+            if (!apiKey) {
+                alert("Zadej API key ❗");
+                return;
+            }
+            if (!prompt) {
+                alert("Napiš dotaz! ❗");
+                return;
+            }
+
+            responseBox.innerText = "Probíhá komunikace s workflow… ⏳";
+
+            try {
+                // Inicializace ChatKit klienta
+                const client = new ChatKit({
+                    apiKey: apiKey
+                });
+
+                // 🔥 ID workflowu (z tvého screenshotu)
+                const workflowId = "wf_6931833ef79c8190b035bce3920e708c0855a7f430e8ee58";
+
+                // Volání workflow
+                const run = await client.workflows.runs.create(workflowId, {
+                    input: {
+                        user_prompt: prompt
+                    }
+                });
+
+                // Získání výsledku
+                const result = run.output ?? "Workflow nevrátil žádnou odpověď";
+
+                responseBox.innerText = typeof result === "string"
+                    ? result
+                    : JSON.stringify(result, null, 2);
+
+            } catch (err) {
+                console.error(err);
+                responseBox.innerText = "Chyba: " + err.message;
+            }
+        };
     </script>
-  </body>
+</body>
 </html>
