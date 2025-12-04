@@ -1,0 +1,30 @@
+<!DOCTYPE html>
+<html lang="cs">
+  <head>
+    <meta charset="UTF-8" />
+    <title>MonaLIGHT agent</title>
+
+    <!-- Knihovna ChatKit – vezmi přesně adresu skriptu z dokumentace -->
+    <script
+      src="https://cdn.platform.openai.com/deployments/chatkit/chatkit.js"
+      async
+    ></script>
+  </head>
+
+  <body>
+    <h1>MonaLIGHT – testovací chat</h1>
+    <div id="chat-container"></div>
+
+    <script>
+      window.addEventListener("load", () => {
+        window.ChatKit.init({
+          element: document.getElementById("chat-container"),
+          workflowId: "wf_6930adcccc4481909aa0a28d45fc96f2024fd4887f52519a",
+          // version: "1", // pokud chceš fixovat verzi
+          publicKey: "domain_pk_69317abcb0c081968b52f88d8902a3e40aeee35a35ba0915",
+          locale: "cs"
+        });
+      });
+    </script>
+  </body>
+</html>
