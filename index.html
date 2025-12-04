@@ -127,10 +127,6 @@
     .chat-header span {
       opacity: 0.8;
     }
-    .chat-header small {
-      font-size: 11px;
-      opacity: 0.7;
-    }
     #chat-wrapper {
       flex: 1;
       min-height: 420px;
@@ -150,12 +146,10 @@
       <p>Připojení přes ChatKit k workflow z Agent Builderu.</p>
 
       <label for="apiKey">OpenAI API Key</label>
-      <input id="apiKey" type="password" placeholder="sk-..." />
+      <input id="apiKey" type="password" placeholder="sk-proj-..." />
 
       <div class="help">
-        Klíč se nikam neukládá – použije se jen v&nbsp;prohlížeči pro vytvoření
-        ChatKit session.<br />
-        Pro produkci doporučuji malý backend proxy.
+        Klíč se nikam neukládá – použije se jen v prohlížeči pro vytvoření ChatKit session.
       </div>
 
       <button id="startBtn">
@@ -163,16 +157,11 @@
       </button>
 
       <div id="status" class="status"></div>
-
-      <div class="help">
-        ⚠️ V konzoli prohlížeče uvidíš podrobné chyby.<br />
-        Nezapomeň přidat doménu GitHub Pages do ChatKit allowlistu.
-      </div>
     </div>
 
     <div class="chat-panel">
       <div class="chat-header">
-        <span>ChatKit &nbsp;·&nbsp; OpenAI Workflow</span>
+        <span>ChatKit &nbsp;·&nbsp; Workflow klient</span>
         <small id="chatState">Nenavázáno</small>
       </div>
       <div id="chat-wrapper">
@@ -182,16 +171,11 @@
     </div>
   </div>
 
-  <!-- ChatKit script -->
-  <script
-    src="https://cdn.platform.openai.com/deployments/chatkit/chatkit.js"
-    defer
-  ></script>
+  <!-- ChatKit loader -->
+  <script src="https://cdn.platform.openai.com/deployments/chatkit/chatkit.js" defer></script>
 
   <script type="module">
-    // 👉 Sem dej svůj Workflow ID z Agent Builderu:
-    const WORKFLOW_ID =
-      "wf_6931833ef79c8190b035bce3920e708c0855a7f430e8ee58";
+    const WORKFLOW_ID = "wf_6931833ef79c8190b035bce3920e708c0855a7f430e8ee58";
 
     const startBtn = document.getElementById("startBtn");
     const statusEl = document.getElementById("status");
@@ -207,7 +191,7 @@
     startBtn.addEventListener("click", async () => {
       const apiKey = apiKeyInput.value.trim();
       if (!apiKey) {
-        alert("Zadej prosím OpenAI API key.");
+        alert("Zadej prosím OpenAI API key (sk-proj-...).");
         return;
       }
 
@@ -216,19 +200,27 @@
       chatStateEl.textContent = "Inicializuji…";
 
       try {
-        // 1) Vytvoření ChatKit session přes API
+        const payload = {
+          session: {
+            instructions: "You are a helpful assistant connected to MonaLIGHT workflow."
+          },
+          client: {
+            type: "web"
+          },
+          workflow: {
+            id: WORKFLOW_ID,
+            version: "draft"
+          }
+        };
+
         const res = await fetch("https://api.openai.com/v1/chatkit/sessions", {
           method: "POST",
           headers: {
             "Content-Type": "application/json",
             Authorization: `Bearer ${apiKey}`,
-            "OpenAI-Beta": "chatkit_beta=v3",
+            "OpenAI-Beta": "chatkit_beta=v1"
           },
-          body: JSON.stringify({
-            workflow: { id: WORKFLOW_ID },
-            user: "github-pages-demo-user",
-            // sem by šly případné state_variables atd.
-          }),
+          body: JSON.stringify(payload),
         });
 
         if (!res.ok) {
@@ -238,33 +230,28 @@
         }
 
         const { client_secret } = await res.json();
-        console.log("ChatKit client_secret získán ✅");
+        console.log("ChatKit client_secret získán ✔️");
 
-        // 2) Počkáme, až je web komponenta k dispozici
         await customElements.whenDefined("openai-chatkit");
 
-        // 3) Předáme konfiguraci do ChatKit komponenty
         chatElement.setOptions({
           api: {
-            // pro jednoduchost pořád vracíme stejný client_secret
-            getClientSecret: () => client_secret,
+            getClientSecret: () => client_secret
           },
           theme: {
             colorScheme: "dark",
             color: {
-              accent: { primary: "#3b82f6", level: 2 },
-            },
+              accent: { primary: "#3b82f6" }
+            }
           },
           composer: {
-            placeholder: "Napiš dotaz pro workflow…",
-          },
-          startScreen: {
-            greeting: "Ahoj! Jsem workflow z Agent Builderu. Jak ti můžu pomoct?",
-          },
+            placeholder: "Napiš dotaz pro workflow…"
+          }
         });
 
-        setStatus("Session vytvořena, můžeš chatovat ✔️", "ok");
+        setStatus("Session vytvořena ✔️", "ok");
         chatStateEl.textContent = "Připojeno k workflow";
+
       } catch (err) {
         console.error(err);
         setStatus("Chyba: " + err.message, "error");
@@ -275,6 +262,3 @@
   </script>
 </body>
 </html>
-
-
-
