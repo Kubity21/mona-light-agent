@@ -1,7 +1,6 @@
-// URL tvého Cloudflare Workeru
-const WORKER_URL = "https://lucky-violet-3dad.jan-kubat.workers.dev";
-
-const WORKFLOW_ID = "wf_6931833ef79c8190b035bce3920e708c0855a7f430e8ee58";
+// ----------------------------------------
+// MonaLIGHT – ChatKit Client
+// ----------------------------------------
 
 const apiKeyInput = document.getElementById("apiKey");
 const startBtn = document.getElementById("startBtn");
@@ -9,85 +8,80 @@ const statusEl = document.getElementById("status");
 const chatStateEl = document.getElementById("chatState");
 const chatEl = document.getElementById("chat");
 
-function setStatus(text, type = "") {
-  statusEl.textContent = text;
-  statusEl.className = "status" + (type ? " " + type : "");
+// URL na tvůj Cloudflare Worker
+const WORKER_URL = "https://lucky-violet-3dad.jan-kubat.workers.dev/";
+
+// ------------------------------
+// UI Helpers
+// ------------------------------
+function setStatus(msg, type = "") {
+  statusEl.textContent = msg;
+  statusEl.className = "status " + type;
 }
 
+function setChatState(msg) {
+  chatStateEl.textContent = msg;
+}
+
+function disableUI(disabled) {
+  startBtn.disabled = disabled;
+  apiKeyInput.disabled = disabled;
+}
+
+// ------------------------------
+// Session creation via Worker
+// ------------------------------
+async function createSession(apiKey) {
+  const payload = { apiKey };
+
+  const res = await fetch(WORKER_URL, {
+    method: "POST",
+    headers: { "Content-Type": "application/json" },
+    body: JSON.stringify(payload)
+  });
+
+  if (!res.ok) {
+    throw new Error(`Worker error: ${res.status}`);
+  }
+
+  return res.json(); // { clientSecret }
+}
+
+// ------------------------------
+// Start Chat
+// ------------------------------
 startBtn.addEventListener("click", async () => {
   const apiKey = apiKeyInput.value.trim();
-  if (!apiKey) {
-    alert("Zadej prosím OpenAI API key (sk-proj-…).");
+
+  // Validate optional key
+  if (apiKey && !apiKey.startsWith("sk-")) {
+    setStatus("Neplatný formát API klíče.", "error");
     return;
   }
 
-  startBtn.disabled = true;
-  setStatus("Vytvářím ChatKit session přes Worker…");
-  chatStateEl.textContent = "Inicializuji…";
+  disableUI(true);
+  setStatus("Připojuji…");
+  setChatState("Connecting…");
 
   try {
-    const userId = "github-pages-" + (crypto.randomUUID?.() || Date.now());
+    const { clientSecret } = await createSession(apiKey);
 
-    const res = await fetch(WORKER_URL, {
-      method: "POST",
-      headers: {
-        "Content-Type": "application/json",
-        "X-Api-Key": apiKey, // Worker může místo toho využít vlastní env.OPENAI_API_KEY
-      },
-      body: JSON.stringify({
-        workflowId: WORKFLOW_ID,
-        user: userId,
-      }),
-    });
-
-    const data = await res.json().catch(() => ({}));
-
-    if (!res.ok) {
-      console.error("Worker error:", data);
-      setStatus("Chyba z Workeru: " + JSON.stringify(data), "error");
-      chatStateEl.textContent = "Chyba spojení";
-      startBtn.disabled = false;
-      return;
-    }
-
-    const clientSecret = data.client_secret;
     if (!clientSecret) {
-      console.error("Worker response without client_secret:", data);
-      setStatus("Worker nevrátil client_secret:\n" + JSON.stringify(data, null, 2), "error");
-      chatStateEl.textContent = "Chyba spojení";
-      startBtn.disabled = false;
-      return;
+      throw new Error("Worker nevrátil clientSecret.");
     }
 
-    // Počkáme na načtení web-komponenty ChatKit
-    await customElements.whenDefined("openai-chatkit");
+    // Initialize ChatKit hosted UI
+    chatEl.clientSecret = clientSecret;
 
-    // Předáme ChatKit konfiguraci – Hosted API s client_secretem z Workeru
-    chatEl.setOptions({
-      api: {
-        // ChatKit si token vyžádá, my mu pořád vrátíme stejný client_secret
-        getClientSecret: async () => clientSecret,
-      },
-      theme: {
-        colorScheme: "dark",
-        color: {
-          accent: { primary: "#2563eb", level: 2 },
-        },
-      },
-      composer: {
-        placeholder: "Napiš dotaz pro MonaLIGHT workflow…",
-      },
-      startScreen: {
-        greeting: "Ahoj! Jsem MonaLIGHT workflow. Jak ti můžu pomoct?",
-      },
-    });
-
-    setStatus("Session vytvořena – můžeš chatovat ✅", "ok");
-    chatStateEl.textContent = "Připojeno k workflow";
-  } catch (err) {
+    setStatus("Připojeno ✔️", "ok");
+    setChatState("Online");
+  }
+  catch (err) {
     console.error(err);
-    setStatus("Chyba: " + err.message, "error");
-    chatStateEl.textContent = "Chyba spojení";
-    startBtn.disabled = false;
+    setStatus("Chyba připojení: " + err.message, "error");
+    setChatState("Chyba");
+  }
+  finally {
+    disableUI(false);
   }
 });
