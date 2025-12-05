@@ -2,134 +2,102 @@
 <html lang="cs">
 <head>
   <meta charset="UTF-8" />
-  <title>MonaLIGHT – Chat Workflow</title>
-  <meta name="viewport" content="width=device-width, initial-scale=1" />
-
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>OpenAI Workflow – Web klient</title>
   <style>
     body {
+      font-family: Arial, sans-serif;
+      background: #f4f4f8;
       margin: 0;
-      font-family: Inter, system-ui, sans-serif;
-      background: #f3f4f6;
-      display: flex;
-      justify-content: center;
-      padding: 24px;
+      padding: 0;
     }
 
     .container {
-      width: 100%;
-      max-width: 1100px;
+      max-width: 650px;
+      margin: 50px auto;
+      padding: 30px;
       background: #fff;
-      border-radius: 18px;
-      overflow: hidden;
-      box-shadow: 0 20px 40px rgba(0,0,0,0.12);
-      display: grid;
-      grid-template-columns: 320px 1fr;
-      min-height: 600px;
-    }
-    @media (max-width: 900px) {
-      .container { grid-template-columns: 1fr; }
+      border-radius: 14px;
+      box-shadow: 0 0 20px rgba(0,0,0,0.08);
     }
 
-    .sidebar {
-      padding: 28px;
-      background: linear-gradient(135deg, #e0e7ff, #f0f9ff);
-      border-right: 1px solid #e5e7eb;
-    }
-
-    .title {
-      font-size: 26px;
+    h1 {
+      margin-top: 0;
+      font-size: 28px;
+      text-align: center;
       font-weight: 700;
-      margin-bottom: 6px;
     }
-    .subtitle {
-      font-size: 14px;
-      color: #475569;
-      line-height: 1.45;
+
+    label {
+      font-weight: bold;
+      display: block;
+      margin-top: 18px;
+    }
+
+    input {
+      width: 100%;
+      padding: 12px;
+      margin-top: 6px;
+      border: 1px solid #ccc;
+      border-radius: 6px;
+      font-size: 15px;
     }
 
     button {
-      margin-top: 24px;
       width: 100%;
-      padding: 12px;
-      border-radius: 10px;
-      border: none;
-      background: #2563eb;
+      padding: 14px;
+      margin-top: 25px;
+      background: #1a65f0;
       color: white;
-      font-size: 15px;
-      font-weight: 600;
+      border: none;
+      border-radius: 8px;
+      font-size: 17px;
       cursor: pointer;
-      transition: 0.2s;
-    }
-    button:hover {
-      background: #1e4ed8;
-    }
-    button:disabled {
-      opacity: 0.6;
-      cursor: default;
     }
 
-    .status {
-      margin-top: 12px;
-      font-size: 13px;
-      min-height: 20px;
-    }
-    .error { color: #c53030; }
-    .ok { color: #15803d; }
+    button:hover { background: #0d4ec7; }
 
-    .chat-panel {
-      background: #0f172a;
-      color: #e2e8f0;
-      display: flex;
-      flex-direction: column;
-    }
-    .chat-header {
-      padding: 14px 18px;
-      border-bottom: 1px solid #1e293b;
-      font-size: 13px;
-      display: flex;
-      justify-content: space-between;
+    .error-box {
+      margin-top: 20px;
+      padding: 14px;
+      background: #ffe6e6;
+      color: #a10000;
+      border-left: 4px solid #d10000;
+      display: none;
+      white-space: pre-wrap;
     }
 
-    #chat-wrapper {
-      flex: 1;
-      min-height: 500px;
-    }
-
-    openai-chatkit {
-      width: 100%;
-      height: 100%;
-      display: block;
+    .success-box {
+      margin-top: 20px;
+      padding: 14px;
+      background: #e9ffe6;
+      color: #086500;
+      border-left: 4px solid #0ea300;
+      display: none;
+      white-space: pre-wrap;
     }
   </style>
 </head>
 
 <body>
   <div class="container">
-    <section class="sidebar">
-      <div class="title">MonaLIGHT Workflow</div>
-      <div class="subtitle">
-        Inteligentní chat nad workflow z OpenAI Agent Builderu.<br/><br/>
-        Klikni na tlačítko a automaticky se vytvoří bezpečná session.
-      </div>
+    <h1>OpenAI Workflow – Web klient</h1>
 
-      <button id="startBtn">Spustit chat</button>
+    <label>OpenAI API Key</label>
+    <input id="apiKeyInput" type="password" placeholder="sk-proj-..." />
 
-      <div id="status" class="status"></div>
-    </section>
+    <label>Workflow ID</label>
+    <input id="workflowIdInput" type="text" value="wf_6931833ef79c8190b035bce3920e708c0855a7f430e8ee58" />
 
-    <section class="chat-panel">
-      <div class="chat-header">
-        <span>ChatKit Workflow Client</span>
-        <span id="chatState">Nepřipojeno</span>
-      </div>
+    <label>Workflow verze</label>
+    <input id="workflowVersionInput" type="text" value="3" />
 
-      <div id="chat-wrapper">
-        <openai-chatkit id="chat"></openai-chatkit>
-      </div>
-    </section>
+    <button id="runBtn">Spustit chat s workflow</button>
+
+    <div class="error-box" id="errorBox"></div>
+    <div class="success-box" id="successBox"></div>
   </div>
 
-  <script src="https://cdn.platform.openai.com/deployments/chatkit/chatkit.js" defer></script>
-  <script type="module" src="script.js"></script>
+  <script src="script.js"></script>
 </body>
 </html>
