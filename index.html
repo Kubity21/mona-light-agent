@@ -2,102 +2,177 @@
 <html lang="cs">
 <head>
   <meta charset="UTF-8" />
-  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-  <title>OpenAI Workflow – Web klient</title>
+  <title>OpenAI Workflow – Web klient (ChatKit)</title>
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+
   <style>
+    * { box-sizing: border-box; }
     body {
-      font-family: Arial, sans-serif;
-      background: #f4f4f8;
       margin: 0;
-      padding: 0;
+      font-family: system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
+      background: #f3f4f6;
+      display: flex;
+      justify-content: center;
+      padding: 24px;
     }
-
-    .container {
-      max-width: 650px;
-      margin: 50px auto;
-      padding: 30px;
-      background: #fff;
-      border-radius: 14px;
-      box-shadow: 0 0 20px rgba(0,0,0,0.08);
+    .app {
+      width: 100%;
+      max-width: 1100px;
+      background: #ffffff;
+      border-radius: 16px;
+      overflow: hidden;
+      box-shadow: 0 18px 45px rgba(15, 23, 42, 0.18);
+      display: grid;
+      grid-template-columns: 340px minmax(0, 1fr);
+      min-height: 520px;
     }
-
-    h1 {
-      margin-top: 0;
-      font-size: 28px;
-      text-align: center;
-      font-weight: 700;
+    @media (max-width: 900px) {
+      .app {
+        grid-template-columns: minmax(0, 1fr);
+      }
     }
-
+    .sidebar {
+      padding: 24px 24px 28px;
+      border-right: 1px solid #e5e7eb;
+      background: radial-gradient(circle at top left, #dbeafe 0, #eef2ff 35%, #f9fafb 100%);
+    }
+    .sidebar h1 {
+      font-size: 24px;
+      margin: 0 0 6px;
+    }
+    .sidebar p {
+      margin: 0 0 14px;
+      font-size: 14px;
+      color: #4b5563;
+    }
     label {
-      font-weight: bold;
       display: block;
-      margin-top: 18px;
+      margin-top: 16px;
+      font-size: 13px;
+      font-weight: 600;
+      letter-spacing: 0.06em;
+      text-transform: uppercase;
+      color: #6b7280;
     }
-
-    input {
+    input[type="password"] {
       width: 100%;
-      padding: 12px;
       margin-top: 6px;
-      border: 1px solid #ccc;
-      border-radius: 6px;
-      font-size: 15px;
-    }
-
-    button {
-      width: 100%;
-      padding: 14px;
-      margin-top: 25px;
-      background: #1a65f0;
-      color: white;
-      border: none;
+      padding: 10px 11px;
       border-radius: 8px;
-      font-size: 17px;
+      border: 1px solid #d1d5db;
+      font-size: 14px;
+    }
+    input[type="password"]:focus {
+      outline: none;
+      border-color: #2563eb;
+      box-shadow: 0 0 0 1px #2563eb33;
+    }
+    button {
+      margin-top: 20px;
+      width: 100%;
+      padding: 11px 14px;
+      border-radius: 999px;
+      border: none;
+      background: linear-gradient(135deg, #2563eb, #1d4ed8);
+      color: white;
+      font-weight: 600;
+      font-size: 15px;
       cursor: pointer;
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+      gap: 8px;
+    }
+    button:disabled {
+      opacity: 0.6;
+      cursor: default;
+    }
+    .status {
+      margin-top: 10px;
+      font-size: 13px;
+      color: #4b5563;
+      white-space: pre-wrap;
+      min-height: 18px;
+    }
+    .status.error { color: #b91c1c; }
+    .status.ok { color: #166534; }
+    .hint {
+      margin-top: 10px;
+      font-size: 12px;
+      color: #6b7280;
+      line-height: 1.4;
     }
 
-    button:hover { background: #0d4ec7; }
-
-    .error-box {
-      margin-top: 20px;
-      padding: 14px;
-      background: #ffe6e6;
-      color: #a10000;
-      border-left: 4px solid #d10000;
-      display: none;
-      white-space: pre-wrap;
+    .chat-panel {
+      background: #020617;
+      display: flex;
+      flex-direction: column;
     }
-
-    .success-box {
-      margin-top: 20px;
-      padding: 14px;
-      background: #e9ffe6;
-      color: #086500;
-      border-left: 4px solid #0ea300;
-      display: none;
-      white-space: pre-wrap;
+    .chat-header {
+      padding: 12px 16px;
+      border-bottom: 1px solid #111827;
+      color: #e5e7eb;
+      font-size: 13px;
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+    }
+    .chat-header span {
+      opacity: 0.85;
+    }
+    .chat-header small {
+      font-size: 11px;
+      opacity: 0.7;
+    }
+    #chat-wrapper {
+      flex: 1;
+      min-height: 420px;
+    }
+    openai-chatkit {
+      width: 100%;
+      height: 100%;
+      display: block;
     }
   </style>
 </head>
 
 <body>
-  <div class="container">
-    <h1>OpenAI Workflow – Web klient</h1>
+  <div class="app">
+    <section class="sidebar">
+      <h1>OpenAI Workflow – Web klient</h1>
+      <p>Připojení k workflow z Agent Builderu přes ChatKit a Cloudflare Worker.</p>
 
-    <label>OpenAI API Key</label>
-    <input id="apiKeyInput" type="password" placeholder="sk-proj-..." />
+      <label for="apiKey">OpenAI API Key</label>
+      <input id="apiKey" type="password" placeholder="sk-proj-…" />
 
-    <label>Workflow ID</label>
-    <input id="workflowIdInput" type="text" value="wf_6931833ef79c8190b035bce3920e708c0855a7f430e8ee58" />
+      <button id="startBtn">
+        <span>Spustit chat s workflow</span>
+      </button>
 
-    <label>Workflow verze</label>
-    <input id="workflowVersionInput" type="text" value="3" />
+      <div id="status" class="status"></div>
 
-    <button id="runBtn">Spustit chat s workflow</button>
+      <div class="hint">
+        • Klíč se neukládá – pošle se jen do Workeru pro vytvoření ChatKit session.<br/>
+        • Pro produkci ideálně nastav <code>OPENAI_API_KEY</code> přímo v prostředí Workeru a
+          políčko s klíčem pak nebude potřeba.
+      </div>
+    </section>
 
-    <div class="error-box" id="errorBox"></div>
-    <div class="success-box" id="successBox"></div>
+    <section class="chat-panel">
+      <div class="chat-header">
+        <span>ChatKit · MonaLIGHT workflow</span>
+        <small id="chatState">Nenavázáno</small>
+      </div>
+      <div id="chat-wrapper">
+        <openai-chatkit id="chat"></openai-chatkit>
+      </div>
+    </section>
   </div>
 
-  <script src="script.js"></script>
+  <!-- ChatKit knihovna (Hosted UI) -->
+  <script src="https://cdn.platform.openai.com/deployments/chatkit/chatkit.js" defer></script>
+
+  <!-- Vlastní logika -->
+  <script type="module" src="script.js"></script>
 </body>
 </html>
