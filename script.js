@@ -5,7 +5,7 @@ const WORKER_URL = "https://lucky-violet-3dad.jan-kubat.workers.dev";
 const WORKFLOW_ID = "wf_6931833ef79c8190b035bce3920e708c0855a7f430e8ee58";
 
 // API key vložený natvrdo (změň ručně)
-const API_KEY = "XXX_API_KEY_XXX";
+const API_KEY = "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";
 
 const startBtn = document.getElementById("startBtn");
 const chatEl = document.getElementById("chat");
