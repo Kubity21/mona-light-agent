@@ -1,143 +1,25 @@
 <!DOCTYPE html>
-<html lang="cs">
+<html>
 <head>
-  <meta charset="UTF-8" />
-  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-  <title>OpenAI Workflow + ChatKit (GitHub Pages)</title>
-
+  <meta charset="UTF-8">
+  <title>OpenAI Workflow – Web klient</title>
+  <script src="https://cdn.platform.openai.com/chatkit/chatkit.js"></script>
   <style>
-    * { box-sizing: border-box; }
-    body {
-      margin: 0;
-      font-family: system-ui, sans-serif;
-      background: #f3f4f6;
-      display: flex;
-      justify-content: center;
-      padding: 24px;
-    }
-    .app {
-      width: 100%;
-      max-width: 960px;
-      background: white;
-      border-radius: 12px;
-      display: grid;
-      grid-template-columns: 320px 1fr;
-      overflow: hidden;
-      box-shadow: 0 8px 30px rgba(0,0,0,0.1);
-    }
-    @media(max-width: 900px) {
-      .app { grid-template-columns: 1fr; }
-    }
-    .sidebar { padding: 24px; border-right: 1px solid #ddd; }
-    .sidebar h2 { margin-top: 0; }
-
-    label { display:block; margin-top:12px; font-weight:600; }
-    input {
-      width:100%; padding:8px; margin-top:6px;
-      border-radius:6px; border:1px solid #ccc;
-      font-size:14px;
-    }
-
-    button {
-      width:100%; margin-top:20px; padding:10px;
-      background:#2563eb; color:white; border:none;
-      border-radius:999px; cursor:pointer;
-      font-size:14px; font-weight:600;
-    }
-    button:disabled { opacity:.6; cursor:default; }
-
-    .status { margin-top:12px; font-size:14px; min-height:18px; }
-    .status.ok { color:#065f46; }
-    .status.error { color:#b91c1c; }
-
-    .chat-panel { background:#020617; display:flex; flex-direction:column; }
-    openai-chatkit { width:100%; height:100%; display:block; }
+    body { font-family: sans-serif; padding: 40px; }
   </style>
 </head>
-
 <body>
-  <div class="app">
-    <div class="sidebar">
-      <h2>OpenAI Workflow – Web klient</h2>
 
-      <label>OpenAI API Key</label>
-      <input id="apiKey" type="password" placeholder="sk-proj-..." />
+<h1>OpenAI Workflow – Web klient</h1>
 
-      <button id="startBtn">Spustit chat s workflow</button>
-      <div id="status" class="status"></div>
-    </div>
+<label>OpenAI API Key</label><br>
+<input id="apiKey" type="password" style="width:400px"><br><br>
 
-    <div class="chat-panel">
-      <openai-chatkit id="chat"></openai-chatkit>
-    </div>
-  </div>
+<button id="startBtn">Spustit chat s workflow</button>
 
-  <!-- ChatKit script -->
-  <script src="https://cdn.platform.openai.com/deployments/chatkit/chatkit.js" defer></script>
+<div id="log"></div>
 
-  <script type="module">
-    // ⚠️ Tvůj workflow v produkci má verzi 3
-    const WORKFLOW_ID = "wf_6931833ef79c8190b035bce3920e708c0855a7f430e8ee58";
-    const WORKFLOW_VERSION = "3";
+<script src="./script.js"></script>
 
-    // URL na Cloudflare Worker
-    const WORKER_URL = "https://lucky-violet-3dad.jan-kubat.workers.dev";
-
-    const btn = document.getElementById("startBtn");
-    const statusEl = document.getElementById("status");
-    const apiKeyEl = document.getElementById("apiKey");
-    const chatEl = document.getElementById("chat");
-
-    btn.onclick = async () => {
-      const apiKey = apiKeyEl.value.trim();
-      if (!apiKey) { alert("Zadej prosím svůj sk-proj- klíč."); return; }
-
-      btn.disabled = true;
-      statusEl.textContent = "Vytvářím session…";
-
-      // Payload pro Worker
-      const payload = {
-        session: { instructions: "Help the user." },
-        client: { type: "web" },
-        workflow: { id: WORKFLOW_ID, version: WORKFLOW_VERSION }
-      };
-
-      try {
-        const res = await fetch(WORKER_URL, {
-          method: "POST",
-          headers: {
-            "Content-Type": "application/json",
-            "X-Api-Key": apiKey
-          },
-          body: JSON.stringify(payload)
-        });
-
-        const text = await res.text();
-        let data;
-        try { data = JSON.parse(text); }
-        catch { throw new Error("Neplatná odpověď z Workeru: " + text); }
-
-        if (!data.client_secret)
-          throw new Error("Worker nevrátil client_secret");
-
-        await customElements.whenDefined("openai-chatkit");
-
-        chatEl.setOptions({
-          api: { getClientSecret: () => data.client_secret },
-          theme: { colorScheme: "dark" },
-          composer: { placeholder: "Zeptej se workflow…" }
-        });
-
-        statusEl.textContent = "Session vytvořena ✔️";
-        statusEl.className = "status ok";
-
-      } catch (err) {
-        console.error(err);
-        statusEl.textContent = "Chyba: " + err.message;
-        statusEl.className = "status error";
-        btn.disabled = false;
-      }
-    };
-  </script>
 </body>
 </html>
