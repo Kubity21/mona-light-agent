@@ -1,93 +1,72 @@
-// URL tvého Cloudflare Workeru
+// Cloudflare Worker endpoint
 const WORKER_URL = "https://lucky-violet-3dad.jan-kubat.workers.dev";
 
+// Workflow ID (ten musíš měnit při změně workflow)
 const WORKFLOW_ID = "wf_6931833ef79c8190b035bce3920e708c0855a7f430e8ee58";
 
-const apiKeyInput = document.getElementById("apiKey");
+// API key vložený natvrdo (změň ručně)
+const API_KEY = "XXX_API_KEY_XXX";
+
 const startBtn = document.getElementById("startBtn");
+const chatEl = document.getElementById("chat");
 const statusEl = document.getElementById("status");
 const chatStateEl = document.getElementById("chatState");
-const chatEl = document.getElementById("chat");
 
-function setStatus(text, type = "") {
-  statusEl.textContent = text;
-  statusEl.className = "status" + (type ? " " + type : "");
+function setStatus(msg, cls = "") {
+  statusEl.textContent = msg;
+  statusEl.className = "status " + cls;
 }
 
 startBtn.addEventListener("click", async () => {
-  const apiKey = apiKeyInput.value.trim();
-  if (!apiKey) {
-    alert("Zadej prosím OpenAI API key (sk-proj-…).");
-    return;
-  }
-
   startBtn.disabled = true;
-  setStatus("Vytvářím ChatKit session přes Worker…");
-  chatStateEl.textContent = "Inicializuji…";
+  chatStateEl.textContent = "Připojuji…";
+  setStatus("Vytvářím session přes Worker…");
 
   try {
-    const userId = "github-pages-" + (crypto.randomUUID?.() || Date.now());
-
     const res = await fetch(WORKER_URL, {
       method: "POST",
       headers: {
-        "Content-Type": "application/json",
-        "X-Api-Key": apiKey, // Worker může místo toho využít vlastní env.OPENAI_API_KEY
+        "Content-Type": "application/json"
       },
       body: JSON.stringify({
         workflowId: WORKFLOW_ID,
-        user: userId,
-      }),
+        user: "user-" + crypto.randomUUID()
+      })
     });
 
-    const data = await res.json().catch(() => ({}));
+    const data = await res.json();
 
-    if (!res.ok) {
-      console.error("Worker error:", data);
-      setStatus("Chyba z Workeru: " + JSON.stringify(data), "error");
-      chatStateEl.textContent = "Chyba spojení";
+    if (!data.client_secret) {
+      setStatus("Worker nevrátil client_secret: " + JSON.stringify(data), "error");
       startBtn.disabled = false;
       return;
     }
 
-    const clientSecret = data.client_secret;
-    if (!clientSecret) {
-      console.error("Worker response without client_secret:", data);
-      setStatus("Worker nevrátil client_secret:\n" + JSON.stringify(data, null, 2), "error");
-      chatStateEl.textContent = "Chyba spojení";
-      startBtn.disabled = false;
-      return;
-    }
-
-    // Počkáme na načtení web-komponenty ChatKit
     await customElements.whenDefined("openai-chatkit");
 
-    // Předáme ChatKit konfiguraci – Hosted API s client_secretem z Workeru
     chatEl.setOptions({
       api: {
-        // ChatKit si token vyžádá, my mu pořád vrátíme stejný client_secret
-        getClientSecret: async () => clientSecret,
+        getClientSecret: async () => data.client_secret
       },
       theme: {
         colorScheme: "dark",
-        color: {
-          accent: { primary: "#2563eb", level: 2 },
-        },
+        color: { accent: { primary: "#3b82f6" } }
       },
       composer: {
-        placeholder: "Napiš dotaz pro MonaLIGHT workflow…",
+        placeholder: "Zeptej se MonaLIGHT workflow…"
       },
       startScreen: {
-        greeting: "Ahoj! Jsem MonaLIGHT workflow. Jak ti můžu pomoct?",
-      },
+        greeting: "Ahoj! Jsem MonaLIGHT workflow. Jak ti můžu pomoci?"
+      }
     });
 
-    setStatus("Session vytvořena – můžeš chatovat ✅", "ok");
-    chatStateEl.textContent = "Připojeno k workflow";
+    chatStateEl.textContent = "Připojeno";
+    setStatus("Hotovo – můžeš chatovat!", "ok");
+
   } catch (err) {
-    console.error(err);
     setStatus("Chyba: " + err.message, "error");
-    chatStateEl.textContent = "Chyba spojení";
-    startBtn.disabled = false;
+    chatStateEl.textContent = "Chyba";
   }
+
+  startBtn.disabled = false;
 });
