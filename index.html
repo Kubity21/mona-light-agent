@@ -1,25 +1,178 @@
 <!DOCTYPE html>
-<html lang="en">
+<html lang="cs">
 <head>
-  <meta charset="UTF-8">
-  <title>Chat s OpenAI Agentem</title>
-  <script src="https://cdn.platform.openai.com/deployments/chatkit/chatkit.js" async></script>
+  <meta charset="UTF-8" />
+  <title>OpenAI Workflow – Web klient (ChatKit)</title>
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+
   <style>
-    body { font-family: sans-serif; text-align: center; margin-top: 20px; }
-    #chat-container {
+    * { box-sizing: border-box; }
+    body {
+      margin: 0;
+      font-family: system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
+      background: #f3f4f6;
+      display: flex;
+      justify-content: center;
+      padding: 24px;
+    }
+    .app {
       width: 100%;
-      max-width: 500px;
-      height: 600px;
-      margin: 0 auto;
-      border: 1px solid #ccc;
-      border-radius: 8px;
+      max-width: 1100px;
+      background: #ffffff;
+      border-radius: 16px;
       overflow: hidden;
+      box-shadow: 0 18px 45px rgba(15, 23, 42, 0.18);
+      display: grid;
+      grid-template-columns: 340px minmax(0, 1fr);
+      min-height: 520px;
+    }
+    @media (max-width: 900px) {
+      .app {
+        grid-template-columns: minmax(0, 1fr);
+      }
+    }
+    .sidebar {
+      padding: 24px 24px 28px;
+      border-right: 1px solid #e5e7eb;
+      background: radial-gradient(circle at top left, #dbeafe 0, #eef2ff 35%, #f9fafb 100%);
+    }
+    .sidebar h1 {
+      font-size: 24px;
+      margin: 0 0 6px;
+    }
+    .sidebar p {
+      margin: 0 0 14px;
+      font-size: 14px;
+      color: #4b5563;
+    }
+    label {
+      display: block;
+      margin-top: 16px;
+      font-size: 13px;
+      font-weight: 600;
+      letter-spacing: 0.06em;
+      text-transform: uppercase;
+      color: #6b7280;
+    }
+    input[type="password"] {
+      width: 100%;
+      margin-top: 6px;
+      padding: 10px 11px;
+      border-radius: 8px;
+      border: 1px solid #d1d5db;
+      font-size: 14px;
+    }
+    input[type="password"]:focus {
+      outline: none;
+      border-color: #2563eb;
+      box-shadow: 0 0 0 1px #2563eb33;
+    }
+    button {
+      margin-top: 20px;
+      width: 100%;
+      padding: 11px 14px;
+      border-radius: 999px;
+      border: none;
+      background: linear-gradient(135deg, #2563eb, #1d4ed8);
+      color: white;
+      font-weight: 600;
+      font-size: 15px;
+      cursor: pointer;
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+      gap: 8px;
+    }
+    button:disabled {
+      opacity: 0.6;
+      cursor: default;
+    }
+    .status {
+      margin-top: 10px;
+      font-size: 13px;
+      color: #4b5563;
+      white-space: pre-wrap;
+      min-height: 18px;
+    }
+    .status.error { color: #b91c1c; }
+    .status.ok { color: #166534; }
+    .hint {
+      margin-top: 10px;
+      font-size: 12px;
+      color: #6b7280;
+      line-height: 1.4;
+    }
+
+    .chat-panel {
+      background: #020617;
+      display: flex;
+      flex-direction: column;
+    }
+    .chat-header {
+      padding: 12px 16px;
+      border-bottom: 1px solid #111827;
+      color: #e5e7eb;
+      font-size: 13px;
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+    }
+    .chat-header span {
+      opacity: 0.85;
+    }
+    .chat-header small {
+      font-size: 11px;
+      opacity: 0.7;
+    }
+    #chat-wrapper {
+      flex: 1;
+      min-height: 420px;
+    }
+    openai-chatkit {
+      width: 100%;
+      height: 100%;
+      display: block;
     }
   </style>
 </head>
+
 <body>
-  <h1>💬 Chat s AI Agentem</h1>
-  <div id="chat-container"></div>
-  <script src="chat.js"></script>
+  <div class="app">
+    <section class="sidebar">
+      <h1>OpenAI Workflow – Web klient</h1>
+      <p>Připojení k workflow z Agent Builderu přes ChatKit a Cloudflare Worker.</p>
+
+      <label for="apiKey">OpenAI API Key</label>
+      <input id="apiKey" type="password" placeholder="sk-proj-…" />
+
+      <button id="startBtn">
+        <span>Spustit chat s workflow</span>
+      </button>
+
+      <div id="status" class="status"></div>
+
+      <div class="hint">
+        • Klíč se neukládá – pošle se jen do Workeru pro vytvoření ChatKit session.<br/>
+        • Pro produkci ideálně nastav <code>OPENAI_API_KEY</code> přímo v prostředí Workeru a
+          políčko s klíčem pak nebude potřeba.
+      </div>
+    </section>
+
+    <section class="chat-panel">
+      <div class="chat-header">
+        <span>ChatKit · MonaLIGHT workflow</span>
+        <small id="chatState">Nenavázáno</small>
+      </div>
+      <div id="chat-wrapper">
+        <openai-chatkit id="chat"></openai-chatkit>
+      </div>
+    </section>
+  </div>
+
+  <!-- ChatKit knihovna (Hosted UI) -->
+  <script src="https://cdn.platform.openai.com/deployments/chatkit/chatkit.js" defer></script>
+
+  <!-- Vlastní logika -->
+  <script type="module" src="script.js"></script>
 </body>
 </html>
