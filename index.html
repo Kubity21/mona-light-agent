@@ -1,40 +1,25 @@
 <!DOCTYPE html>
-<html lang="cs">
+<html lang="en">
 <head>
-    <meta charset="UTF-8" />
-    <title>OpenAI Workflow – Web klient</title>
-    <meta name="viewport" content="width=device-width, initial-scale=1" />
-    <link href="https://cdn.jsdelivr.net/npm/@picocss/pico@2/css/pico.min.css" rel="stylesheet" />
-    <style>
-        body { padding: 2rem; }
-        #chat-container {
-            margin-top: 2rem;
-            height: 400px;
-            overflow-y: auto;
-            background: #111;
-            padding: 1rem;
-            border-radius: 8px;
-            color: white;
-        }
-        .msg-user { color: #4da3ff; margin-bottom: 0.5rem; }
-        .msg-assistant { color: #74ff8f; margin-bottom: 0.5rem; }
-        .error-box { color: #c62828; margin-top: 0.5rem; font-size: 0.9rem; }
-    </style>
+  <meta charset="UTF-8">
+  <title>Chat s OpenAI Agentem</title>
+  <script src="https://cdn.platform.openai.com/deployments/chatkit/chatkit.js" async></script>
+  <style>
+    body { font-family: sans-serif; text-align: center; margin-top: 20px; }
+    #chat-container {
+      width: 100%;
+      max-width: 500px;
+      height: 600px;
+      margin: 0 auto;
+      border: 1px solid #ccc;
+      border-radius: 8px;
+      overflow: hidden;
+    }
+  </style>
 </head>
 <body>
-
-<h1>OpenAI Workflow – Web klient</h1>
-<p>Připojení k workflow přes ChatKit a Cloudflare Worker.</p>
-
-<label for="apiKey">OpenAI API Key</label>
-<input type="password" id="apiKey" placeholder="sk-proj-..." />
-
-<button id="startBtn">Spustit chat s workflow</button>
-
-<div id="errorBox" class="error-box"></div>
-
-<div id="chat-container">ChatKit · MonaLIGHT workflow<br/>Nenavázáno</div>
-
-<script src="script.js"></script>
+  <h1>💬 Chat s AI Agentem</h1>
+  <div id="chat-container"></div>
+  <script src="chat.js"></script>
 </body>
 </html>
