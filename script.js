@@ -1,72 +1,61 @@
-// Cloudflare Worker endpoint
-const WORKER_URL = "https://lucky-violet-3dad.jan-kubat.workers.dev";
+document.getElementById("runBtn").onclick = async () => {
+    const apiKey = document.getElementById("apiKeyInput").value.trim();
+    const workflowId = document.getElementById("workflowIdInput").value.trim();
+    const workflowVersion = document.getElementById("workflowVersionInput").value.trim();
 
-// Workflow ID (ten musíš měnit při změně workflow)
-const WORKFLOW_ID = "wf_6931833ef79c8190b035bce3920e708c0855a7f430e8ee58";
+    const errorBox = document.getElementById("errorBox");
+    const successBox = document.getElementById("successBox");
 
-// API key vložený natvrdo (změň ručně)
-const API_KEY = "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";
+    errorBox.style.display = "none";
+    successBox.style.display = "none";
 
-const startBtn = document.getElementById("startBtn");
-const chatEl = document.getElementById("chat");
-const statusEl = document.getElementById("status");
-const chatStateEl = document.getElementById("chatState");
-
-function setStatus(msg, cls = "") {
-  statusEl.textContent = msg;
-  statusEl.className = "status " + cls;
-}
-
-startBtn.addEventListener("click", async () => {
-  startBtn.disabled = true;
-  chatStateEl.textContent = "Připojuji…";
-  setStatus("Vytvářím session přes Worker…");
-
-  try {
-    const res = await fetch(WORKER_URL, {
-      method: "POST",
-      headers: {
-        "Content-Type": "application/json"
-      },
-      body: JSON.stringify({
-        workflowId: WORKFLOW_ID,
-        user: "user-" + crypto.randomUUID()
-      })
-    });
-
-    const data = await res.json();
-
-    if (!data.client_secret) {
-      setStatus("Worker nevrátil client_secret: " + JSON.stringify(data), "error");
-      startBtn.disabled = false;
-      return;
+    if (!apiKey) {
+        showError("Prosím vlož OpenAI API klíč.");
+        return;
+    }
+    if (!workflowId) {
+        showError("Chybí Workflow ID.");
+        return;
     }
 
-    await customElements.whenDefined("openai-chatkit");
+    try {
+        const res = await fetch("https://lucky-violet-3dad.jan-kubat.workers.dev/", {
+            method: "POST",
+            headers: {
+                "Content-Type": "application/json",
+                "X-Api-Key": apiKey,
+            },
+            body: JSON.stringify({
+                workflow: {
+                    id: workflowId,
+                    version: workflowVersion
+                },
+                session: {},
+                client: {},
+            }),
+        });
 
-    chatEl.setOptions({
-      api: {
-        getClientSecret: async () => data.client_secret
-      },
-      theme: {
-        colorScheme: "dark",
-        color: { accent: { primary: "#3b82f6" } }
-      },
-      composer: {
-        placeholder: "Zeptej se MonaLIGHT workflow…"
-      },
-      startScreen: {
-        greeting: "Ahoj! Jsem MonaLIGHT workflow. Jak ti můžu pomoci?"
-      }
-    });
+        const data = await res.json();
 
-    chatStateEl.textContent = "Připojeno";
-    setStatus("Hotovo – můžeš chatovat!", "ok");
+        if (data.error || data.raw?.error || res.status !== 200) {
+            showError(JSON.stringify(data.error || data.raw || data, null, 2));
+        } else {
+            showSuccess(JSON.stringify(data, null, 2));
+        }
 
-  } catch (err) {
-    setStatus("Chyba: " + err.message, "error");
-    chatStateEl.textContent = "Chyba";
-  }
+    } catch (err) {
+        showError("Došlo k chybě:\n" + err.message);
+    }
+};
 
-  startBtn.disabled = false;
-});
+function showError(msg) {
+    const box = document.getElementById("errorBox");
+    box.textContent = msg;
+    box.style.display = "block";
+}
+
+function showSuccess(msg) {
+    const box = document.getElementById("successBox");
+    box.textContent = msg;
+    box.style.display = "block";
+}
