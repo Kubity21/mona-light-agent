@@ -1,74 +1,43 @@
-const WORKER_URL = "https://lucky-violet-3dad.jan-kubat.workers.dev/";
-const WORKFLOW_ID = "wf_6931833ef79c8190b035bce3920e708c0855a7f430e8ee58";
-const WORKFLOW_VERSION = "3";
+document.getElementById("startBtn").onclick = async () => {
+    const apiKey = document.getElementById("apiKey").value;
+    const out = document.getElementById("chat-container");
+    const errBox = document.getElementById("errorBox");
 
-const apiKeyInput = document.getElementById("apiKey");
-const startBtn = document.getElementById("startBtn");
-const chatBox = document.getElementById("chat-container");
-const errorBox = document.getElementById("errorBox");
-
-function appendMessage(text, who = "assistant") {
-    const div = document.createElement("div");
-    div.className = who === "user" ? "msg-user" : "msg-assistant";
-    div.textContent = (who === "user" ? "🧑 " : "🤖 ") + text;
-    chatBox.appendChild(div);
-    chatBox.scrollTop = chatBox.scrollHeight;
-}
-
-startBtn.onclick = async () => {
-    errorBox.textContent = "";
-    chatBox.innerHTML = "ChatKit · MonaLIGHT workflow<br/>Připojuji…";
-
-    let apiKey = apiKeyInput.value.trim();
-
-    if (!apiKey.startsWith("sk-")) {
-        errorBox.textContent = "❌ Incorrect API key format.";
-        return;
-    }
+    errBox.textContent = "";
+    out.innerHTML = "ChatKit · MonaLIGHT workflow<br> Připojuji…";
 
     try {
-        const res = await fetch(WORKER_URL, {
-            method: "POST",
-            headers: {
-                "Content-Type": "application/json",
-                "X-Api-Key": apiKey
-            },
-            body: JSON.stringify({
-                workflow: {
-                    id: WORKFLOW_ID,
-                    version: WORKFLOW_VERSION,
+        const response = await fetch(
+            "https://lucky-violet-3dad.jan-kubat.workers.dev/",
+            {
+                method: "POST",
+                headers: {
+                    "Content-Type": "application/json",
+                    "X-Api-Key": apiKey
                 },
-                session: {
-                    messages: [
-                        { role: "user", content: "start" }
-                    ]
-                },
-                client: {
-                    info: "web-client"
-                }
-            })
-        });
+                body: JSON.stringify({
+                    workflow: {
+                        id: "wf_6931833ef79c8190b035bce3920e708c0855a7f430e8ee58",
+                        version: "3"
+                    },
+                    user_input: "start"
+                })
+            }
+        );
 
-        const result = await res.json();
+        const data = await response.json();
 
-        if (result.error) {
-            errorBox.textContent = JSON.stringify(result.error, null, 2);
+        if (!response.ok) {
+            errBox.textContent = JSON.stringify(data, null, 2);
             return;
         }
 
-        if (result.openai_raw) {
-            // Raw obsahuje JSON string → parse
-            const parsed = JSON.parse(result.openai_raw);
+        out.innerHTML = `
+            Session: ${data.session.id}<br>
+            Odpověď: ${data.reply?.content?.[0]?.text || "—"}
+        `;
 
-            if (parsed.output_text) {
-                chatBox.innerHTML = "";
-                appendMessage(parsed.output_text, "assistant");
-            } else {
-                appendMessage("Workflow odpověděl bez textového výstupu.");
-            }
-        }
-
-    } catch (err) {
-        errorBox.textContent = "Client error: " + err.message;
+    } catch (e) {
+        errBox.textContent = e.message;
     }
 };
